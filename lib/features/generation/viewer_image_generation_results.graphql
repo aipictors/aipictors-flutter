@@ -1,0 +1,55 @@
+query ViewerImageGenerationResults($offset: Int!, $limit: Int!, $where: ImageGenerationResultsWhereInput) {
+  viewer {
+    imageGenerationResults(offset: $offset, limit: $limit, where: $where) {
+      id
+      prompt
+      negativePrompt
+      seed
+      steps
+      scale
+      sampler
+      clipSkip
+      sizeType
+      t2tImageUrl
+      t2tMaskImageUrl
+      t2tDenoisingStrengthSize
+      t2tInpaintingFillSize
+      imageUrl
+      thumbnailUrl
+      rating
+      completedAt
+      status
+      isProtected
+      generationType
+      model {
+        id
+        name
+        type
+      }
+      vae
+      nanoid
+      estimatedSeconds
+      controlNetControlMode
+      controlNetEnabled
+      controlNetGuidanceEnd
+      controlNetGuidanceStart
+      controlNetPixelPerfect
+      controlNetProcessorRes
+      controlNetResizeMode
+      controlNetThresholdA
+      controlNetThresholdB
+      controlNetWeight
+      controlNetModule
+      controlNetModel
+      controlNetSaveDetectedMap
+      controlNetHrOption
+      upscaleSize
+      imageFileName
+      thumbnailImageFileName
+      imageFileName
+      thumbnailImageFileName
+      token
+      thumbnailToken
+    }
+  }
+}

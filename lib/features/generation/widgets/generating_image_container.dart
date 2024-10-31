@@ -12,11 +12,17 @@ class GeneratingImageContainer extends HookConsumerWidget {
 
   @override
   Widget build(context, ref) {
-    final ValueNotifier<GViewerImageGenerationStatusData?>
-        viewerImageGenerationStatus = useState(null);
-    ref
-        .watch(viewerImageGenerationStatusProvider.future)
-        .then((value) => viewerImageGenerationStatus.value = value);
+    final imageGenerationStatus =
+        useState<GViewerImageGenerationStatusData?>(null);
+    final initialWaitCount = useState<int?>(null);
+    final viewerImageGenerationStatus =
+        ref.watch(viewerImageGenerationStatusProvider);
+    viewerImageGenerationStatus.whenData(
+      (final data) {
+        imageGenerationStatus.value = data;
+        initialWaitCount.value ??= data?.viewer?.imageGenerationWaitCount;
+      },
+    );
 
     return Center(
         child: Column(
@@ -32,18 +38,14 @@ class GeneratingImageContainer extends HookConsumerWidget {
               .replaceAllMapped(
                 RegExp(r'_VIEWER_WAIT_'),
                 (match) =>
-                    viewerImageGenerationStatus
+                    imageGenerationStatus
                         .value?.viewer?.imageGenerationWaitCount
                         .toString() ??
                     '0',
               )
               .replaceAllMapped(
                 RegExp(r'_TOTAL_WAIT_'),
-                (match) =>
-                    viewerImageGenerationStatus
-                        .value?.imageGenerationEngineStatus.normalTasksCount
-                        .toString() ??
-                    '0',
+                (match) => initialWaitCount.value.toString(),
               ),
         ),
       ],

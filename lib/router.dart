@@ -27,7 +27,8 @@ import 'package:aipictors/features/folder/folder_create_screen.dart';
 import 'package:aipictors/features/folder/folder_report_screen.dart';
 import 'package:aipictors/features/folder/folder_screen.dart';
 import 'package:aipictors/features/folder/folder_update_screen.dart';
-import 'package:aipictors/features/generation/generation_task_screen.dart';
+import 'package:aipictors/features/generation/generation_result_screen.dart';
+import 'package:aipictors/features/generation/generation_results_screen.dart';
 import 'package:aipictors/features/guideline/guideline_screen.dart';
 import 'package:aipictors/features/home/root_screen.dart';
 import 'package:aipictors/features/information/information_screen.dart';
@@ -408,10 +409,16 @@ final _routes = [
     },
   ),
   GoRoute(
-    path: '/generation/tasks/:task',
+    path: '/generation/results',
     builder: (context, state) {
-      final taskNanoId = state.pathParameters['task'];
-      return GenerationTaskScreen(taskNanoId: taskNanoId!);
+      return const GenerationResultsScreen();
+    },
+  ),
+  GoRoute(
+    path: '/generation/results/:result',
+    builder: (context, state) {
+      final resultNanoId = state.pathParameters['result'];
+      return GenerationResultScreen(resultNanoId: resultNanoId!);
     },
   ),
   GoRoute(

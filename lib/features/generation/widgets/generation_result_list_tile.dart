@@ -1,7 +1,6 @@
 import 'package:aipictors/default.i18n.dart';
-import 'package:aipictors/features/generation/__generated__/viewer_image_generation_tasks.data.gql.dart';
+import 'package:aipictors/features/generation/__generated__/viewer_image_generation_results.data.gql.dart';
 import 'package:aipictors/features/generation/utils/reuse_image_generation_task.dart';
-import 'package:aipictors/features/generation/utils/to_generation_image_url.dart';
 import 'package:aipictors/features/generation/utils/to_generation_size_type_text.dart';
 import 'package:aipictors/features/generation/widgets/generation_protect_button.dart';
 import 'package:aipictors/features/generation/widgets/generation_rating_container.dart';
@@ -13,17 +12,17 @@ import 'package:aipictors/widgets/image/feed_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class GenerationTaskListTile extends HookConsumerWidget {
-  const GenerationTaskListTile({
+class GenerationResultListTile extends HookConsumerWidget {
+  const GenerationResultListTile({
     super.key,
-    required this.task,
+    required this.result,
     required this.onTap,
     required this.onRating,
     required this.onProtect,
     required this.onDelete,
   });
 
-  final GViewerImageGenerationTasksData_viewer_imageGenerationTasks task;
+  final GViewerImageGenerationResultsData_viewer_imageGenerationResults result;
 
   final VoidCallback onTap;
 
@@ -52,7 +51,7 @@ class GenerationTaskListTile extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FeedImage(
-            imageURL: toGenerationImageUrl(task.token!, task.imageFileName!),
+            imageURL: result.thumbnailUrl,
             imageAspectRatio: 1,
             headers: const {
               'Referer': 'https://beta.aipictors.com/',
@@ -67,14 +66,14 @@ class GenerationTaskListTile extends HookConsumerWidget {
           children: [
             GenerationTaskOptionsContainer(
               onReuseButtonPressed: () {
-                reuseImageGenerationTask(task, imageGenerationNotifier);
+                reuseImageGenerationTask(result, imageGenerationNotifier);
                 showSnackBar(context, '生成情報を復元しました'.i18n);
               },
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () {
-                onDelete(context, task.nanoid!);
+                onDelete(context, result.nanoid!);
               },
             ),
           ],
@@ -90,16 +89,16 @@ class GenerationTaskListTile extends HookConsumerWidget {
             ),
           ),
           GenerationRatingContainer(
-            currentRating: task.rating ?? 0,
+            currentRating: result.rating ?? 0,
             onPressed: (int value) {
-              onRating(context, task.nanoid!, value);
+              onRating(context, result.nanoid!, value);
             },
           ),
           const Spacer(),
           GenerationProtectButton(
-            isProtected: task.isProtected ?? false,
+            isProtected: result.isProtected ?? false,
             onPressed: (newProtectionState) {
-              onProtect(context, task.nanoid!, newProtectionState);
+              onProtect(context, result.nanoid!, newProtectionState);
             },
           ),
         ]),
@@ -108,7 +107,7 @@ class GenerationTaskListTile extends HookConsumerWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         PromptsContainer(
-          prompts: task.prompt,
+          prompts: result.prompt,
           onPressed: (String prompt) {
             imageGenerationNotifier
                 .updatePrompt('${imageGeneration.prompt}, $prompt');
@@ -127,7 +126,7 @@ class GenerationTaskListTile extends HookConsumerWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         PromptsContainer(
-          prompts: task.negativePrompt,
+          prompts: result.negativePrompt,
           onPressed: (String negativePrompt) {
             imageGenerationNotifier.updateNegativePrompt(
                 '${imageGeneration.negativePrompt}, $negativePrompt');
@@ -146,36 +145,36 @@ class GenerationTaskListTile extends HookConsumerWidget {
           children: [
             GenerationSettingCard(
               name: 'モデル'.i18n,
-              value: task.model.name.split('.')[0],
+              value: result.model.name.split('.')[0],
               onPressed: () {
-                imageGenerationNotifier.updateModel(task.model.name);
+                imageGenerationNotifier.updateModel(result.model.name);
                 showSnackBar(context, 'モデルを設定しました'.i18n);
               },
             ),
             GenerationSettingCard(
               name: 'サイズ'.i18n,
-              value: toGenerationSizeTypeText(task.sizeType),
+              value: toGenerationSizeTypeText(result.sizeType),
               onPressed: () {
-                imageGenerationNotifier.updateSizeType(task.sizeType);
+                imageGenerationNotifier.updateSizeType(result.sizeType);
                 showSnackBar(context, 'サイズを設定しました'.i18n);
               },
             ),
             GenerationSettingCard(
               name: 'Seed'.i18n,
-              value: task.seed.toString(),
+              value: result.seed.toString(),
               onPressed: () {
-                imageGenerationNotifier.updateSeed(task.seed.toInt());
+                imageGenerationNotifier.updateSeed(result.seed.toInt());
                 showSnackBar(context, 'Seedを設定しました'.i18n);
               },
             ),
             GenerationSettingCard(
               name: 'VAE'.i18n,
-              value: task.vae!,
+              value: result.vae!,
               onPressed: () {
-                if (task.vae != 'None') {
-                  imageGenerationNotifier.updateVae(task.vae!.split('.')[0]);
+                if (result.vae != 'None') {
+                  imageGenerationNotifier.updateVae(result.vae!.split('.')[0]);
                 } else {
-                  imageGenerationNotifier.updateVae(task.vae);
+                  imageGenerationNotifier.updateVae(result.vae);
                 }
                 showSnackBar(context, 'VAEを設定しました'.i18n);
               },

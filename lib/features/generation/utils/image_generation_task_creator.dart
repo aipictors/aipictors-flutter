@@ -1,6 +1,5 @@
 import 'package:aipictors/default.i18n.dart';
 import 'package:aipictors/features/generation/functions/create_image_generation_task.dart';
-import 'package:aipictors/features/generation/utils/active_image_generation.dart';
 import 'package:aipictors/features/generation/utils/prompt_check.dart';
 import 'package:aipictors/providers/viewer_image_generation_status_provider.dart';
 import 'package:aipictors/providers/viewer_provider.dart';
@@ -82,7 +81,6 @@ Future<void> imageGenerationTaskCreator(BuildContext context, WidgetRef ref,
   }
 
   try {
-    await activeImageGeneration(viewer.viewer!.user.nanoid!);
     await createImageGenerationTask((builder) {
       return builder
         ..vars.input.count = imageGeneration.count
@@ -97,7 +95,6 @@ Future<void> imageGenerationTaskCreator(BuildContext context, WidgetRef ref,
         ..vars.input.sampler = imageGeneration.sampler
         ..vars.input.sizeType = imageGeneration.sizeType;
     });
-    await activeImageGeneration(viewer.viewer!.user.nanoid!);
     // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

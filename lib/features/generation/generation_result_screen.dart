@@ -1,20 +1,17 @@
 import 'package:aipictors/default.i18n.dart';
-import 'package:aipictors/features/generation/__generated__/viewer_image_generation_task.req.gql.dart';
+import 'package:aipictors/features/generation/__generated__/viewer_image_generation_result.req.gql.dart';
 import 'package:aipictors/features/generation/functions/delete_image_generation_task.dart';
 import 'package:aipictors/features/generation/functions/update_protected_image_generation_task.dart';
 import 'package:aipictors/features/generation/functions/update_rating_image_generation_task.dart';
 import 'package:aipictors/features/generation/utils/reuse_image_generation_task.dart';
-import 'package:aipictors/features/generation/utils/to_generation_image_url.dart';
 import 'package:aipictors/features/generation/utils/to_generation_size_type_text.dart';
 import 'package:aipictors/features/generation/widgets/delete_image_generation_task.dart';
 import 'package:aipictors/features/generation/widgets/generation_protect_button.dart';
 import 'package:aipictors/features/generation/widgets/generation_rating_container.dart';
 import 'package:aipictors/features/generation/widgets/generation_setting_container.dart';
-import 'package:aipictors/features/generation/widgets/generation_task_options_container.dart';
 import 'package:aipictors/features/generation/widgets/prompts_container.dart';
 import 'package:aipictors/features/home/widgets/data_not_found_error_screen.dart';
 import 'package:aipictors/features/home/widgets/loading_screen.dart';
-import 'package:aipictors/features/post/widgets/deleted_work_error_container.dart';
 import 'package:aipictors/providers/client_provider.dart';
 import 'package:aipictors/providers/image_generation_provider.dart';
 import 'package:aipictors/widgets/builder/operation_screen_builder.dart';
@@ -25,13 +22,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// 生成画像の詳細
 // TODO: デザインを見直す
-class GenerationTaskScreen extends HookConsumerWidget {
-  const GenerationTaskScreen({
+class GenerationResultScreen extends HookConsumerWidget {
+  const GenerationResultScreen({
     super.key,
-    required this.taskNanoId,
+    required this.resultNanoId,
   });
 
-  final String taskNanoId;
+  final String resultNanoId;
 
   @override
   Widget build(context, ref) {
@@ -47,16 +44,13 @@ class GenerationTaskScreen extends HookConsumerWidget {
 
     return OperationScreenBuilder(
       client: client.value!,
-      operationRequest: GViewerImageGenerationTaskReq((builder) {
-        builder.vars.id = taskNanoId;
+      operationRequest: GViewerImageGenerationResultReq((builder) {
+        builder.vars.id = resultNanoId;
       }),
       builder: (context, response) {
-        final task = response.data?.imageGenerationTask;
-        if (task == null) {
+        final result = response.data?.imageGenerationResult;
+        if (result == null) {
           return const DataNotFoundErrorScreen();
-        }
-        if (task.isDeleted) {
-          return const DeletedWorkErrorScreen();
         }
         return Scaffold(
           resizeToAvoidBottomInset: true,
@@ -75,45 +69,36 @@ class GenerationTaskScreen extends HookConsumerWidget {
                   children: [
                     const SizedBox(height: 8 * 1.5),
                     InteractiveWorkImage(
-                      downloadURL: toGenerationImageUrl(
-                          task.token!, task.imageFileName!),
+                      downloadURL: result.imageUrl!,
                       headers: const {
                         'Referer': 'https://beta.aipictors.com/',
                       },
                     ),
                     const SizedBox(height: 8),
                     Row(children: [
-                      GenerationTaskOptionsContainer(
-                        onReuseButtonPressed: () {
-                          reuseImageGenerationTask(
-                            task,
-                            imageGenerationNotifier,
-                          );
-                          showSnackBar(context, '生成情報を復元しました'.i18n);
-                        },
-                      ),
                       GenerationRatingContainer(
-                        currentRating: task.rating!,
+                        currentRating: result.rating!,
                         onPressed: (int rating) {
                           onRating(
                             context,
-                            task.nanoid!,
-                            (task.rating != rating) ? rating : 0,
+                            result.nanoid!,
+                            (result.rating != rating) ? rating : 0,
                           );
                         },
                       ),
                       const SizedBox(width: 16),
                       GenerationProtectButton(
-                        isProtected: task.isProtected ?? false,
+                        isProtected: result.isProtected ?? false,
                         onPressed: (bool newProtectionState) {
-                          onProtect(context, task.nanoid!, newProtectionState);
+                          onProtect(
+                              context, result.nanoid!, newProtectionState);
                         },
                       ),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.delete_rounded),
                         onPressed: () {
-                          onDelete(context, task.nanoid!);
+                          onDelete(context, result.nanoid!);
                         },
                       ),
                     ]),
@@ -123,7 +108,7 @@ class GenerationTaskScreen extends HookConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     PromptsContainer(
-                        prompts: task.prompt,
+                        prompts: result.prompt,
                         onPressed: (String prompt) {
                           imageGenerationNotifier.updatePrompt(
                             '${imageGeneration.prompt}, $prompt',
@@ -142,7 +127,7 @@ class GenerationTaskScreen extends HookConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     PromptsContainer(
-                        prompts: task.negativePrompt,
+                        prompts: result.negativePrompt,
                         onPressed: (String negativePrompt) {
                           imageGenerationNotifier.updateNegativePrompt(
                             '${imageGeneration.negativePrompt}, $negativePrompt',
@@ -160,67 +145,67 @@ class GenerationTaskScreen extends HookConsumerWidget {
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'モデル'.i18n,
-                      value: task.model.name.split('.')[0],
+                      value: result.model.name.split('.')[0],
                       onPressed: () {
-                        imageGenerationNotifier.updateModel(task.model.name);
+                        imageGenerationNotifier.updateModel(result.model.name);
                         showSnackBar(context, 'モデルを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'サイズ'.i18n,
-                      value: toGenerationSizeTypeText(task.sizeType),
+                      value: toGenerationSizeTypeText(result.sizeType),
                       onPressed: () {
-                        imageGenerationNotifier.updateSizeType(task.sizeType);
+                        imageGenerationNotifier.updateSizeType(result.sizeType);
                         showSnackBar(context, 'サイズを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'Seed'.i18n,
-                      value: task.seed.toInt().toString(),
+                      value: result.seed.toInt().toString(),
                       onPressed: () {
-                        imageGenerationNotifier.updateSeed(task.seed.toInt());
+                        imageGenerationNotifier.updateSeed(result.seed.toInt());
                         showSnackBar(context, 'Seedを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'Steps'.i18n,
-                      value: task.steps.toString(),
+                      value: result.steps.toString(),
                       onPressed: () {
-                        imageGenerationNotifier.updateSteps(task.steps);
+                        imageGenerationNotifier.updateSteps(result.steps);
                         showSnackBar(context, 'Stepsを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'Scale'.i18n,
-                      value: task.scale.toString(),
+                      value: result.scale.toString(),
                       onPressed: () {
-                        imageGenerationNotifier.updateScale(task.scale);
+                        imageGenerationNotifier.updateScale(result.scale);
                         showSnackBar(context, 'Scaleを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'Sampler'.i18n,
-                      value: task.sampler.toString(),
+                      value: result.sampler.toString(),
                       onPressed: () {
-                        imageGenerationNotifier.updateSampler(task.sampler);
+                        imageGenerationNotifier.updateSampler(result.sampler);
                         showSnackBar(context, 'Samplerを設定しました'.i18n);
                       },
                     ),
                     const SizedBox(height: 8),
                     GenerationSettingContainer(
                       name: 'VAE'.i18n,
-                      value: task.vae.toString(),
+                      value: result.vae.toString(),
                       onPressed: () {
-                        if (task.vae != 'None') {
+                        if (result.vae != 'None') {
                           imageGenerationNotifier
-                              .updateVae(task.vae!.split('.')[0]);
+                              .updateVae(result.vae!.split('.')[0]);
                         } else {
-                          imageGenerationNotifier.updateVae(task.vae!);
+                          imageGenerationNotifier.updateVae(result.vae!);
                         }
                         showSnackBar(context, 'VAEを設定しました'.i18n);
                       },
@@ -233,7 +218,7 @@ class GenerationTaskScreen extends HookConsumerWidget {
           bottomNavigationBar: FilledButton(
             child: Text('復元する'.i18n),
             onPressed: () {
-              reuseImageGenerationTask(task, imageGenerationNotifier);
+              reuseImageGenerationTask(result, imageGenerationNotifier);
               showSnackBar(context, '生成情報を復元しました'.i18n);
             },
           ),
